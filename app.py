@@ -18,7 +18,11 @@ HOW TO RUN:
 
 
 
-import sqlite3 import uuid from datetime import datetime import pandas as pd import streamlit as st
+import sqlite3
+import uuid
+from datetime import datetime
+import pandas as pd
+import streamlit as st
 
 DB_FILE = "tasks.db"
 
