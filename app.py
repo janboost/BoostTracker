@@ -115,87 +115,6 @@ class TaskManager:
         return streak
 
 
-# -------------------------
-# UI STYLE
-# -------------------------
-st.set_page_config(page_title="BoostTracker", layout="wide")
-
-st.markdown("""
-<style>
-body { background-color: #0e1117; color: white; }
-.metric { font-size:20px; font-weight:bold; }
-</style>
-""", unsafe_allow_html=True)
-
-tm = TaskManager()
-
-# -------------------------
-# SIDEBAR
-# -------------------------
-st.sidebar.title("🚀 BoostTracker")
-menu = st.sidebar.radio("", ["Dashboard", "Añadir", "Gestionar"])
-
-date = st.sidebar.date_input("Fecha", datetime.now())
-date_str = date.strftime("%Y-%m-%d")
-
-df = tm.df(tm.get_tasks(date_str))
-
-# -------------------------
-# DASHBOARD
-# -------------------------
-if menu == "Dashboard":
-
-    st.title("📊 Dashboard")
-
-    total, done, pending, percent = tm.metrics(df)
-    score = tm.score(df)
-    streak = tm.streak()
-
-    c1,c2,c3,c4 = st.columns(4)
-    c1.metric("Total", total)
-    c2.metric("Hechas", done)
-    c3.metric("Pendientes", pending)
-    c4.metric("Cumplimiento", f"{percent:.0f}%")
-
-    st.progress(percent/100)
-
-    c5,c6 = st.columns(2)
-    c5.metric("🔥 Racha", streak)
-    c6.metric("🎯 Score", score)
-
-    st.divider()
-
-    if not df.empty:
-        st.subheader("📈 Categorías")
-        chart = df.groupby("category")["status"].mean()*100
-        st.bar_chart(chart)
-
-        st.subheader("📋 Tareas")
-
-        df_show = df.copy()
-        df_show["status"] = df_show["status"].apply(lambda x: "✅" if x else "❌")
-        st.dataframe(df_show, use_container_width=True)
-    else:
-        st.info("No hay tareas hoy")
-
-# -------------------------
-# ADD
-# -------------------------
-elif menu == "Añadir":
-
-    st.title("➕ Nueva tarea")
-
-    with st.form("form"):
-        name = st.text_input("Nombre")
-        cat = st.selectbox("Categoría", tm.CATEGORIES)
-        pri = st.selectbox("Prioridad", tm.PRIORITIES)
-
-        ok = st.form_submit_button("Crear")
-
-        if ok:
-            if name:
-                tm.add_task(name, cat, pri)
-                st.success("Añadida")
                 st.rerun()
             else:
                 st.error("Falta nombre")
@@ -220,4 +139,225 @@ elif menu == "Gestionar":
             label = "✅" if r["status"] else "❌"
             if col4.button(label, key=r["id"]):
                 tm.update(r["id"], 0 if r["status"] else 1)
+                st.rerun()
+                
+import streamlit as st
+from datetime import datetime
+
+st.set_page_config(page_title="Anime Boost Tracker", layout="wide")
+
+# -------------------------
+# STYLE (ANIME / SPORT THEME)
+# -------------------------
+st.markdown("""
+<style>
+
+/* Background */
+body {
+    background: radial-gradient(circle at top, #0b0f19, #020617);
+    color: #e5e7eb;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0f172a, #020617);
+}
+
+/* Main container spacing */
+.block-container {
+    padding: 2rem 2.5rem;
+}
+
+/* Titles */
+h1, h2, h3 {
+    color: #f8fafc;
+    font-weight: 700;
+}
+
+/* Cards */
+.card {
+    background: linear-gradient(145deg, #111827, #0b1220);
+    border: 1px solid #1f2937;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 6px 25px rgba(0,0,0,0.5);
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    border: 1px solid #ef4444;
+}
+
+/* Metric title */
+.metric-title {
+    font-size: 13px;
+    color: #9ca3af;
+    letter-spacing: 1px;
+}
+
+/* Metric value */
+.metric-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #f43f5e;
+}
+
+/* Buttons */
+div.stButton > button {
+    background: linear-gradient(90deg, #ef4444, #3b82f6);
+    color: white;
+    border-radius: 10px;
+    border: none;
+    padding: 0.4rem 1rem;
+    font-weight: bold;
+}
+
+div.stButton > button:hover {
+    opacity: 0.9;
+}
+
+/* Divider */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #ef4444, transparent);
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# -------------------------
+# SIDEBAR
+# -------------------------
+st.sidebar.title("🔥 Anime Tracker")
+
+menu = st.sidebar.radio(
+    "Navigation",
+    ["🏠 Dashboard", "⚔️ Tasks", "➕ Add Task"]
+)
+
+st.sidebar.divider()
+
+date = st.sidebar.date_input("Date", datetime.now())
+date_str = date.strftime("%Y-%m-%d")
+
+# -------------------------
+# CARD COMPONENT
+# -------------------------
+def card(title, value):
+    st.markdown(f"""
+    <div class="card">
+        <div class="metric-title">{title}</div>
+        <div class="metric-value">{value}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# -------------------------
+# DASHBOARD
+# -------------------------
+if menu == "🏠 Dashboard":
+
+    st.title("⚡ Performance Dashboard")
+
+    total, done, pending, percent = tm.metrics(df)
+    score = tm.score(df)
+    streak = tm.streak()
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        card("TOTAL", total)
+
+    with c2:
+        card("COMPLETED", done)
+
+    with c3:
+        card("PENDING", pending)
+
+    with c4:
+        card("COMPLIANCE", f"{percent:.0f}%")
+
+    st.progress(percent / 100)
+
+    st.write("")
+
+    c5, c6 = st.columns(2)
+
+    with c5:
+        card("🔥 STREAK", streak)
+
+    with c6:
+        card("🎯 SCORE", score)
+
+    st.divider()
+
+    st.subheader("📊 Category Power")
+
+    if not df.empty:
+        chart = df.groupby("category")["status"].mean() * 100
+        st.bar_chart(chart)
+
+    st.subheader("📋 Task Overview")
+
+    if not df.empty:
+        df_show = df.copy()
+        df_show["status"] = df_show["status"].map({0: "❌", 1: "✅"})
+        st.dataframe(df_show, use_container_width=True, hide_index=True)
+    else:
+        st.info("No tasks yet")
+
+# -------------------------
+# TASK MANAGEMENT
+# -------------------------
+elif menu == "⚔️ Tasks":
+
+    st.title("⚔️ Manage Tasks")
+
+    if df.empty:
+        st.warning("No tasks available")
+    else:
+        edited_df = df.copy()
+        edited_df["status"] = edited_df["status"].astype(bool)
+
+        edited = st.data_editor(
+            edited_df,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "status": st.column_config.CheckboxColumn("Done"),
+                "priority": st.column_config.SelectboxColumn(
+                    "Priority",
+                    options=["Alta", "Media", "Baja"]
+                )
+            }
+        )
+
+        if st.button("💾 Save Changes"):
+            for _, row in edited.iterrows():
+                tm.update(row["id"], int(row["status"]))
+            st.success("Updated")
+            st.rerun()
+
+# -------------------------
+# ADD TASK
+# -------------------------
+elif menu == "➕ Add Task":
+
+    st.title("➕ Create New Task")
+
+    with st.form("form"):
+        name = st.text_input("Task name")
+        category = st.selectbox("Category", tm.CATEGORIES)
+        priority = st.selectbox("Priority", tm.PRIORITIES)
+
+        submitted = st.form_submit_button("Create")
+
+        if submitted:
+            if name.strip() == "":
+                st.error("Name cannot be empty")
+            else:
+                tm.add_task(name, category, priority)
+                st.success("Task created")
                 st.rerun()
